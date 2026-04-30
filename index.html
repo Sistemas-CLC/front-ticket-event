@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Asistencia — La Comunidad</title>
+  <link rel="icon" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.cdnfonts.com">
+  <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/metropolis-2">
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:        #002e63;
+      --navy-mid:    #003b7e;
+      --navy-light:  #004494;
+      --blue:        #0071ad;
+      --blue-light:  #0090d8;
+      --white:       #ffffff;
+      --bg:          #f0f4f8;
+      --bg-alt:      #e6ecf3;
+      --text:        #0f1f35;
+      --text-muted:  #5a7090;
+      --border:      rgba(0, 46, 99, 0.12);
+      --border-blue: rgba(0, 113, 173, 0.25);
+      --success:     #00b87a;
+      --error:       #e53030;
+      --warning:     #d97706;
+      --font: 'Metropolis', 'Segoe UI', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .page-wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 18px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--navy);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+    }
+
+    .header-logo img {
+      height: 36px;
+      width: auto;
+      display: block;
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #00e6a0;
+      box-shadow: 0 0 8px #00e6a0;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.55; transform: scale(0.82); }
+    }
+
+    /* ── Hero strip ── */
+    .hero {
+      background: var(--navy);
+      padding: 28px 28px 32px;
+      border-bottom: 3px solid var(--blue);
+    }
+
+    .hero-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--blue-light);
+      margin-bottom: 6px;
+    }
+
+    .hero-title {
+      font-size: clamp(22px, 4vw, 30px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: var(--white);
+    }
+
+    .hero-title span { color: var(--blue-light); }
+
+    .hero-meta {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.45);
+    }
+
+    .hero-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* ── Main layout ── */
+    main {
+      flex: 1;
+      padding: 28px 20px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-width: 920px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 580px) {
+      .actions-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 2px 8px rgba(0, 46, 99, 0.07), 0 1px 2px rgba(0,0,0,0.04);
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+      animation: fadeSlideUp 0.35s ease both;
+    }
+
+    .card:nth-child(1) { animation-delay: 0.04s; }
+    .card:nth-child(2) { animation-delay: 0.1s; }
+    .card.attendees-card { animation-delay: 0.17s; }
+
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card:hover {
+      border-color: var(--border-blue);
+      box-shadow: 0 6px 20px rgba(0, 46, 99, 0.1), 0 2px 4px rgba(0,0,0,0.04);
+    }
+
+    .card-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 3px 10px rgba(0, 46, 99, 0.25);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--navy);
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 20px;
+      border-radius: 10px;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      transition: all 0.17s ease;
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: black;
+      opacity: 0;
+      transition: opacity 0.12s;
+    }
+
+    .btn:active::after { opacity: 0.06; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 100%);
+      color: var(--white);
+      box-shadow: 0 3px 12px rgba(0, 46, 99, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 18px rgba(0, 46, 99, 0.4);
+    }
+
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--navy);
+      border: 1.5px solid var(--border-blue);
+    }
+
+    .btn-outline:hover {
+      background: rgba(0, 46, 99, 0.05);
+      border-color: var(--blue);
+    }
+
+    .btn-danger {
+      background: rgba(229, 48, 48, 0.08);
+      color: var(--error);
+      border: 1.5px solid rgba(229, 48, 48, 0.25);
+    }
+
+    .btn-danger:hover { background: rgba(229, 48, 48, 0.14); }
+
+    .btn-sm {
+      padding: 8px 14px;
+      font-size: 12px;
+      border-radius: 8px;
+      width: auto;
+    }
+
+    /* ── Input ── */
+    .input-group {
+      display: flex;
+      gap: 10px;
+      flex-direction: column;
+    }
+
+    .input-wrap { position: relative; }
+
+    .input-wrap svg {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 14px 11px 40px;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -moz-appearance: textfield;
+    }
+
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    input::placeholder { color: #9aacbe; }
+
+    input:focus {
+      border-color: var(--blue);
+      background: var(--white);
+      box-shadow: 0 0 0 3px rgba(0, 113, 173, 0.12);
+    }
+
+    /* ── QR Scanner Modal ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 15, 35, 0.75);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--navy);
+      border: 1px solid rgba(0, 113, 173, 0.4);
+      border-radius: 20px;
+      padding: 26px;
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+      transform: scale(0.95) translateY(8px);
+      transition: transform 0.22s ease;
+    }
+
+    .modal-overlay.open .modal {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--white);
+    }
+
+    .modal-close {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.14s;
+    }
+
+    .modal-close:hover { background: rgba(255,255,255,0.14); }
+
+    #qr-reader {
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      background: #000;
+    }
+
+    #qr-reader video {
+      width: 100% !important;
+      height: auto !important;
+      border-radius: 12px;
+    }
+
+    #qr-reader img { display: none !important; }
+    #qr-reader__scan_region { border-radius: 12px; }
+    #qr-reader__dashboard { display: none !important; }
+
+    .qr-frame-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .qr-frame {
+      width: 190px;
+      height: 190px;
+      position: relative;
+    }
+
+    .qr-frame::before, .qr-frame::after,
+    .qr-frame-inner::before, .qr-frame-inner::after {
+      content: '';
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-color: #0090d8;
+      border-style: solid;
+    }
+
+    .qr-frame::before  { top:0; left:0;  border-width:3px 0 0 3px; border-radius:4px 0 0 0; }
+    .qr-frame::after   { bottom:0; right:0; border-width:0 3px 3px 0; border-radius:0 0 4px 0; }
+    .qr-frame-inner::before { top:0; right:0; border-width:3px 3px 0 0; border-radius:0 4px 0 0; }
+    .qr-frame-inner::after  { bottom:0; left:0; border-width:0 0 3px 3px; border-radius:0 0 0 4px; }
+
+    .qr-scan-line {
+      position: absolute;
+      left: 8%; right: 8%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #0090d8, transparent);
+      animation: scan-line 2s ease-in-out infinite;
+      border-radius: 2px;
+      box-shadow: 0 0 8px #0090d8;
+    }
+
+    @keyframes scan-line {
+      0%   { top: 8%; opacity: 1; }
+      48%  { opacity: 1; }
+      50%  { top: 88%; opacity: 0.4; }
+      52%  { opacity: 1; }
+      100% { top: 8%; opacity: 1; }
+    }
+
+    .qr-hint {
+      text-align: center;
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      font-weight: 500;
+    }
+
+    /* ── Attendees Card ── */
+    .attendees-card { width: 100%; }
+
+    .attendees-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .attendees-count {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 46, 99, 0.07);
+      border: 1px solid var(--border-blue);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .attendees-table-wrap {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 440px;
+    }
+
+    thead th {
+      background: var(--navy);
+      padding: 11px 16px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.55);
+      white-space: nowrap;
+    }
+
+    thead th:first-child { border-radius: 9px 0 0 0; }
+    thead th:last-child  { border-radius: 0 9px 0 0; }
+
+    tbody tr {
+      border-top: 1px solid var(--border);
+      transition: background 0.13s;
+    }
+
+    tbody tr:hover { background: rgba(0, 46, 99, 0.03); }
+
+    tbody td {
+      padding: 12px 16px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    tbody td:first-child { color: var(--text); font-weight: 600; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-success {
+      background: rgba(0, 184, 122, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(0, 184, 122, 0.25);
+    }
+
+    .badge-info {
+      background: rgba(0, 113, 173, 0.1);
+      color: var(--blue);
+      border: 1px solid rgba(0, 113, 173, 0.25);
+    }
+
+    .badge-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .empty-state {
+      padding: 44px 20px;
+      text-align: center;
+      color: #9aacbe;
+    }
+
+    .empty-state svg { margin: 0 auto 12px; opacity: 0.35; display: block; }
+    .empty-state p { font-size: 13px; font-weight: 500; }
+
+    /* ── Toast notifications ── */
+    #toast-container {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 13px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      min-width: 270px;
+      max-width: 330px;
+      box-shadow: 0 6px 20px rgba(0, 46, 99, 0.12), 0 2px 4px rgba(0,0,0,0.05);
+      animation: toast-in 0.28s ease both;
+      pointer-events: all;
+    }
+
+    .toast.removing { animation: toast-out 0.22s ease both; }
+
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateX(16px) scale(0.96); }
+      to   { opacity: 1; transform: translateX(0) scale(1); }
+    }
+
+    @keyframes toast-out {
+      from { opacity: 1; transform: translateX(0) scale(1); }
+      to   { opacity: 0; transform: translateX(16px) scale(0.96); }
+    }
+
+    .toast-icon {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .toast-success .toast-icon { background: rgba(0,184,122,0.1); border: 1px solid rgba(0,184,122,0.2); }
+    .toast-error   .toast-icon { background: rgba(229,48,48,0.08); border: 1px solid rgba(229,48,48,0.2); }
+    .toast-info    .toast-icon { background: rgba(0,113,173,0.1);  border: 1px solid rgba(0,113,173,0.2); }
+
+    .toast-success { border-left: 3px solid var(--success); }
+    .toast-error   { border-left: 3px solid var(--error);   }
+    .toast-info    { border-left: 3px solid var(--blue);    }
+
+    .toast-body { flex: 1; }
+
+    .toast-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 1px;
+    }
+
+    .toast-msg {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    /* ── Loading spinner ── */
+    .spinner {
+      width: 15px; height: 15px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.55s linear infinite;
+      display: inline-block;
+    }
+
+    .spinner-dark {
+      border-color: rgba(0,46,99,0.2);
+      border-top-color: var(--navy);
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Result panel ── */
+    .result-panel {
+      background: var(--bg);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 13px;
+      font-size: 13px;
+      color: var(--text-muted);
+      display: none;
+    }
+
+    .result-panel.show { display: block; animation: fadeSlideUp 0.22s ease; }
+    .result-panel.success { border-color: rgba(0,184,122,0.3); background: rgba(0,184,122,0.05); }
+    .result-panel.error   { border-color: rgba(229,48,48,0.25); background: rgba(229,48,48,0.04); }
+
+    .result-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .result-panel.success .result-label { color: var(--success); }
+    .result-panel.error   .result-label { color: var(--error);   }
+
+    .result-data { display: flex; flex-direction: column; gap: 5px; }
+
+    .result-row { display: flex; gap: 8px; }
+
+    .result-key {
+      color: #9aacbe;
+      font-weight: 600;
+      flex-shrink: 0;
+      min-width: 80px;
+    }
+
+    .result-val {
+      color: var(--text);
+      font-weight: 500;
+      word-break: break-word;
+    }
+
+    /* ── Refresh row ── */
+    .refresh-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .last-updated {
+      font-size: 11px;
+      color: #9aacbe;
+      font-weight: 500;
+      flex: 1;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 400px) {
+      header { padding: 14px 16px; }
+      .hero  { padding: 22px 16px 26px; }
+      main   { padding: 16px 14px 32px; }
+      .card  { padding: 18px; }
+      .modal { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- Header -->
+  <header>
+    <div class="header-logo">
+      <img src="logo.png" alt="La Comunidad" onerror="this.parentElement.innerHTML='<span style=\'font-size:17px;font-weight:800;letter-spacing:-0.02em;color:white\'>La Comunidad</span>'">
+    </div>
+    <div class="header-status">
+      <div class="status-dot"></div>
+      Sistema activo
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-label">Panel de control</div>
+    <h1 class="hero-title">Control de <span>Asistencia</span></h1>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span id="today-date">—</span>
+      </div>
+      <div class="hero-meta-item">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span id="live-time">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <main>
+    <div class="actions-grid">
+
+      <!-- QR Scanner Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+              <rect x="14" y="14" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/>
+              <rect x="14" y="18" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/>
+            </svg>
+          </div>
+          <div>
+            <div class="card-title">Escanear QR</div>
+            <div class="card-subtitle">Registro por código QR</div>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="btn-open-qr">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Abrir cámara
+        </button>
+        <div class="result-panel" id="qr-result"></div>
+      </div>
+
+      <!-- Document ID Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/>
+            </svg>
+          </div>
+          <div>
+            <div class="card-title">Número de Documento</div>
+            <div class="card-subtitle">Registro manual por cédula</div>
+          </div>
+        </div>
+        <div class="input-group">
+          <div class="input-wrap">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#002e63" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input type="number" id="id-input" placeholder="Ej: 1017221212" autocomplete="off">
+          </div>
+          <button class="btn btn-primary" id="btn-id-submit">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Registrar asistencia
+          </button>
+        </div>
+        <div class="result-panel" id="id-result"></div>
+      </div>
+
+    </div>
+
+    <!-- Attendees Card -->
+    <div class="card attendees-card">
+      <div class="attendees-header">
+        <div class="card-header" style="margin:0">
+          <div class="card-icon">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div>
+            <div class="card-title">Lista de Asistentes</div>
+            <div class="card-subtitle">Registros del evento</div>
+          </div>
+        </div>
+        <span class="attendees-count" id="attendees-count" style="display:none">
+          <span id="count-num">0</span> registros
+        </span>
+      </div>
+
+      <div class="refresh-row">
+        <span class="last-updated" id="last-updated">Sin cargar aún</span>
+        <button class="btn btn-outline btn-sm" id="btn-load-attendees">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Actualizar lista
+        </button>
+      </div>
+
+      <div id="attendees-container">
+        <div class="empty-state">
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <p>Haz clic en "Actualizar lista" para cargar los asistentes</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- QR Modal -->
+<div class="modal-overlay" id="qr-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Escanear código QR</div>
+      <button class="modal-close" id="btn-close-modal">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div style="position:relative">
+      <div id="qr-reader"></div>
+      <div class="qr-frame-overlay">
+        <div class="qr-frame">
+          <div class="qr-frame-inner"></div>
+          <div class="qr-scan-line"></div>
+        </div>
+      </div>
+    </div>
+    <p class="qr-hint">Apunta la cámara al código QR del asistente</p>
+    <button class="btn btn-danger btn-sm" id="btn-stop-qr" style="width:auto;align-self:center">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+      Detener cámara
+    </button>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script>
+  const API_BASE = 'http://localhost:3000/api';
+  const EVENT_ID = '7b11dcaf-ee48-4fbe-b6da-c27b8b6b5ae3';
+
+  // ── Clock ──
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('live-time').textContent =
+      now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    document.getElementById('today-date').textContent =
+      now.toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // ── Toast ──
+  function showToast(title, msg, type = 'info') {
+    const iconColor = { success: '#00b87a', error: '#e53030', info: '#0071ad' }[type];
+    const icons = {
+      success: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+      error:   `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+      info:    `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+    };
+    const t = document.createElement('div');
+    t.className = `toast toast-${type}`;
+    t.innerHTML = `<div class="toast-icon">${icons[type]}</div><div class="toast-body"><div class="toast-title">${title}</div><div class="toast-msg">${msg}</div></div>`;
+    document.getElementById('toast-container').appendChild(t);
+    setTimeout(() => { t.classList.add('removing'); setTimeout(() => t.remove(), 230); }, 4000);
+  }
+
+  // ── Result panel ──
+  function showResult(panelId, data, isError = false) {
+    const panel = document.getElementById(panelId);
+    panel.className = `result-panel show ${isError ? 'error' : 'success'}`;
+    const label = isError ? 'Error en la respuesta' : 'Respuesta del servidor';
+    const rows = Object.entries(data).map(([k, v]) =>
+      `<div class="result-row"><span class="result-key">${k}</span><span class="result-val">${typeof v === 'object' ? JSON.stringify(v) : v}</span></div>`
+    ).join('');
+    panel.innerHTML = `<div class="result-label">${label}</div><div class="result-data">${rows || '<div class="result-row"><span class="result-val">Registro exitoso</span></div>'}</div>`;
+  }
+
+  // ── API POST ──
+  async function apiPost(url, body, resultPanelId, successTitle, errorTitle) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        showResult(resultPanelId, data, false);
+        showToast(successTitle, data.message || data.name || 'Registro completado.', 'success');
+      } else {
+        showResult(resultPanelId, data, true);
+        showToast(errorTitle, data.message || `Error ${res.status}`, 'error');
+      }
+      return { ok: res.ok, data };
+    } catch (err) {
+      const errData = { error: err.message };
+      showResult(resultPanelId, errData, true);
+      showToast(errorTitle, 'No se pudo conectar con el servidor.', 'error');
+      return { ok: false, data: errData };
+    }
+  }
+
+  // ── QR Scanner ──
+  let html5QrCode = null;
+  let scannerRunning = false;
+
+  document.getElementById('btn-open-qr').addEventListener('click', () => {
+    document.getElementById('qr-modal').classList.add('open');
+    startScanner();
+  });
+
+  document.getElementById('btn-close-modal').addEventListener('click', closeModal);
+  document.getElementById('btn-stop-qr').addEventListener('click', closeModal);
+  document.getElementById('qr-modal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+
+  function closeModal() {
+    stopScanner();
+    document.getElementById('qr-modal').classList.remove('open');
+  }
+
+  async function startScanner() {
+    try {
+      html5QrCode = new Html5Qrcode('qr-reader');
+      await html5QrCode.start(
+        { facingMode: 'environment' },
+        { fps: 12, qrbox: { width: 210, height: 210 }, aspectRatio: 1.0 },
+        onQrSuccess,
+        () => {}
+      );
+      scannerRunning = true;
+    } catch (err) {
+      showToast('Error de cámara', err.message || 'No se pudo acceder a la cámara.', 'error');
+      closeModal();
+    }
+  }
+
+  async function stopScanner() {
+    if (html5QrCode && scannerRunning) {
+      try { await html5QrCode.stop(); } catch (_) {}
+      try { html5QrCode.clear(); } catch (_) {}
+      scannerRunning = false;
+      html5QrCode = null;
+    }
+  }
+
+  async function onQrSuccess(decodedText) {
+    await stopScanner();
+    closeModal();
+    const uuidMatch = decodedText.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    const token = uuidMatch ? uuidMatch[0] : decodedText.trim();
+    showToast('QR detectado', `Token: ${token.substring(0, 14)}…`, 'info');
+
+    const btn = document.getElementById('btn-open-qr');
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spinner"></div> Registrando...`;
+
+    await apiPost(`${API_BASE}/attendance/scan`, { qrToken: token }, 'qr-result', 'Asistencia registrada', 'Error al registrar QR');
+
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Abrir cámara`;
+  }
+
+  // ── ID Submit ──
+  document.getElementById('btn-id-submit').addEventListener('click', submitId);
+  document.getElementById('id-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitId(); });
+
+  async function submitId() {
+    const val = document.getElementById('id-input').value.trim();
+    if (!val) {
+      showToast('Campo vacío', 'Ingresa el número de documento.', 'error');
+      document.getElementById('id-input').focus();
+      return;
+    }
+    const btn = document.getElementById('btn-id-submit');
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spinner"></div> Registrando...`;
+
+    await apiPost(`${API_BASE}/attendance/id`, { idNumber: val }, 'id-result', 'Asistencia registrada', 'Error al registrar documento');
+
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Registrar asistencia`;
+  }
+
+  // ── Attendees List ──
+  document.getElementById('btn-load-attendees').addEventListener('click', loadAttendees);
+
+  async function loadAttendees() {
+    const btn = document.getElementById('btn-load-attendees');
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spinner spinner-dark"></div> Cargando...`;
+    const container = document.getElementById('attendees-container');
+    const countBadge = document.getElementById('attendees-count');
+
+    try {
+      const res = await fetch(`${API_BASE}/attendance?eventId=${EVENT_ID}`);
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : (data.data || data.attendees || data.items || []);
+
+      if (!Array.isArray(list) || list.length === 0) {
+        container.innerHTML = `<div class="empty-state"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><p>No hay asistentes registrados aún</p></div>`;
+        countBadge.style.display = 'none';
+        showToast('Lista cargada', 'No hay asistentes registrados.', 'info');
+      } else {
+        renderTable(list);
+        document.getElementById('count-num').textContent = list.length;
+        countBadge.style.display = 'inline-flex';
+        showToast('Lista actualizada', `${list.length} asistente${list.length !== 1 ? 's' : ''} encontrado${list.length !== 1 ? 's' : ''}.`, 'success');
+      }
+      document.getElementById('last-updated').textContent =
+        `Actualizado: ${new Date().toLocaleTimeString('es-CO')}${list.length ? ' · ' + list.length + ' registros' : ''}`;
+    } catch (err) {
+      container.innerHTML = `<div class="empty-state"><p style="color:var(--error)">Error al cargar: ${err.message}</p></div>`;
+      showToast('Error de conexión', 'No se pudo cargar la lista de asistentes.', 'error');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Actualizar lista`;
+  }
+
+  // ── Render table with specific fields ──
+  const MODALITY_LABELS = {
+    IN_PERSON: 'Presencial',
+    VIRTUAL: 'Virtual',
+    HYBRID: 'Híbrido',
+  };
+
+  function formatDate(iso) {
+    if (!iso) return '<span style="color:#9aacbe">—</span>';
+    try {
+      return new Date(iso).toLocaleString('es-CO', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      });
+    } catch (_) { return iso; }
+  }
+
+  function renderTable(list) {
+    const thead = `
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nombre completo</th>
+          <th>Correo</th>
+          <th>Teléfono</th>
+          <th>Modalidad</th>
+          <th>Fecha de registro</th>
+        </tr>
+      </thead>`;
+
+    const tbody = `<tbody>${list.map((item, i) => {
+      const p = item.registration?.participant ?? {};
+      const nombre = [p.firstName, p.lastName].filter(Boolean).join(' ') || '—';
+      const correo = p.email || '—';
+      const telefono = p.phone || '—';
+      const modalidad = MODALITY_LABELS[p.modality] ?? (p.modality || '—');
+      const modalBadge = p.modality === 'IN_PERSON'
+        ? `<span class="badge badge-success"><span class="badge-dot"></span>${modalidad}</span>`
+        : p.modality === 'VIRTUAL'
+        ? `<span class="badge badge-info"><span class="badge-dot"></span>${modalidad}</span>`
+        : `<span style="color:var(--text-muted)">${modalidad}</span>`;
+
+      return `<tr>
+        <td style="color:var(--text-muted);font-size:12px">${i + 1}</td>
+        <td>${nombre}</td>
+        <td style="font-size:12px">${correo}</td>
+        <td style="font-size:12px">${telefono}</td>
+        <td>${modalBadge}</td>
+        <td style="font-size:12px">${formatDate(item.scannedAt)}</td>
+      </tr>`;
+    }).join('')}</tbody>`;
+
+    document.getElementById('attendees-container').innerHTML =
+      `<div class="attendees-table-wrap"><table>${thead}${tbody}</table></div>`;
+  }
+</script>
+
+</body>
+</html>
