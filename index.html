@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control de Asistencia — La Comunidad</title>
+  <title>Control de Ingreso — La Comunidad</title>
   <link rel="icon" href="favicon.png">
   <link rel="preconnect" href="https://fonts.cdnfonts.com">
   <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/metropolis-2">
@@ -758,7 +758,7 @@
   <!-- Hero -->
   <div class="hero">
     <div class="hero-label">Panel de control</div>
-    <h1 class="hero-title">Control de <span>Asistencia</span></h1>
+    <h1 class="hero-title">Control de <span>Ingreso</span></h1>
     <div class="hero-meta">
       <div class="hero-meta-item">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -1014,7 +1014,30 @@
     btn.disabled = true;
     btn.innerHTML = `<div class="spinner"></div> Registrando...`;
 
-    await apiPost(`${API_BASE}/attendance/scan`, { qrToken: token }, 'qr-result', 'Asistencia registrada', 'Error al registrar QR');
+    try {
+      const res = await fetch(`${API_BASE}/attendance/scan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ qrToken: token }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.participant) {
+        const fullName = `${data.participant.firstName} ${data.participant.lastName}`;
+        const panel = document.getElementById('qr-result');
+        panel.className = 'result-panel show success';
+        panel.innerHTML = `<div class="result-label">Acceso concedido</div><div class="result-data"><div class="result-row" style="justify-content:center;padding:10px 0"><span class="result-val" style="font-size:1.25em;font-weight:700">Bienvenido, ${fullName}</span></div></div>`;
+        showToast('Bienvenido', fullName, 'success');
+      } else if (res.ok) {
+        showResult('qr-result', data, false);
+        showToast('Asistencia registrada', data.message || 'Registro completado.', 'success');
+      } else {
+        showResult('qr-result', data, true);
+        showToast('Error al registrar QR', data.message || `Error ${res.status}`, 'error');
+      }
+    } catch (err) {
+      showResult('qr-result', { error: err.message }, true);
+      showToast('Error al registrar QR', 'No se pudo conectar con el servidor.', 'error');
+    }
 
     btn.disabled = false;
     btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Abrir cámara`;
@@ -1035,7 +1058,30 @@
     btn.disabled = true;
     btn.innerHTML = `<div class="spinner"></div> Registrando...`;
 
-    await apiPost(`${API_BASE}/attendance/id`, { idNumber: val }, 'id-result', 'Asistencia registrada', 'Error al registrar documento');
+    try {
+      const res = await fetch(`${API_BASE}/attendance/validate-id`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idNumber: val, eventId: EVENT_ID }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.participant) {
+        const fullName = `${data.participant.firstName} ${data.participant.lastName}`;
+        const panel = document.getElementById('id-result');
+        panel.className = 'result-panel show success';
+        panel.innerHTML = `<div class="result-label">Acceso concedido</div><div class="result-data"><div class="result-row" style="justify-content:center;padding:10px 0"><span class="result-val" style="font-size:1.25em;font-weight:700">Bienvenido, ${fullName}</span></div></div>`;
+        showToast('Bienvenido', fullName, 'success');
+      } else if (res.ok) {
+        showResult('id-result', data, false);
+        showToast('Asistencia registrada', data.message || 'Registro completado.', 'success');
+      } else {
+        showResult('id-result', data, true);
+        showToast('Error al registrar documento', data.message || `Error ${res.status}`, 'error');
+      }
+    } catch (err) {
+      showResult('id-result', { error: err.message }, true);
+      showToast('Error al registrar documento', 'No se pudo conectar con el servidor.', 'error');
+    }
 
     btn.disabled = false;
     btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Registrar asistencia`;
