@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.cdnfonts.com">
   <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/metropolis-2">
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -149,6 +150,46 @@
       gap: 18px;
     }
 
+    /* ── Event banner ── */
+    .event-banner {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 100%);
+      border-radius: 14px;
+      padding: 14px 18px;
+      box-shadow: 0 3px 12px rgba(0, 46, 99, 0.2);
+      animation: fadeSlideUp 0.35s ease both;
+    }
+
+    .event-banner-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .event-banner-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.55);
+      margin-bottom: 2px;
+    }
+
+    .event-banner-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--white);
+      letter-spacing: -0.01em;
+    }
+
     @media (max-width: 580px) {
       .actions-grid { grid-template-columns: 1fr; }
     }
@@ -274,6 +315,12 @@
     .btn-outline:hover {
       background: rgba(0, 46, 99, 0.05);
       border-color: var(--blue);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
     }
 
     .btn-danger {
@@ -773,6 +820,16 @@
 
   <!-- Main -->
   <main>
+    <div class="event-banner" id="event-banner" style="display:none">
+      <div class="event-banner-icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div>
+        <div class="event-banner-label">Evento activo</div>
+        <div class="event-banner-title" id="event-banner-title">—</div>
+      </div>
+    </div>
+
     <div class="actions-grid">
 
       <!-- QR Scanner Card -->
@@ -851,6 +908,10 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           Actualizar lista
         </button>
+        <button class="btn btn-outline btn-sm" id="btn-download-excel" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar Excel
+        </button>
       </div>
 
       <div id="attendees-container">
@@ -894,7 +955,7 @@
 
 <script>
   const API_BASE = 'https://back-event.lacomunidad.org.co/api';
-  const EVENT_ID = '77bee837-6a14-4841-8b3e-ca2401660e8e';
+  const EVENT_ID = '24f03217-b656-48cc-9813-be4eb29c1e7c';
 
   // ── Clock ──
   function updateClock() {
@@ -906,6 +967,19 @@
   }
   updateClock();
   setInterval(updateClock, 1000);
+
+  // ── Active event info ──
+  async function loadEventInfo() {
+    try {
+      const res = await fetch(`${API_BASE}/events/${EVENT_ID}`);
+      const data = await res.json();
+      if (res.ok && data.title) {
+        document.getElementById('event-banner-title').textContent = data.title;
+        document.getElementById('event-banner').style.display = 'flex';
+      }
+    } catch (_) {}
+  }
+  loadEventInfo();
 
   // ── Toast ──
   function showToast(title, msg, type = 'info') {
@@ -1089,9 +1163,13 @@
 
   // ── Attendees List ──
   document.getElementById('btn-load-attendees').addEventListener('click', loadAttendees);
+  document.getElementById('btn-download-excel').addEventListener('click', downloadExcel);
+
+  let lastAttendeesList = [];
 
   async function loadAttendees() {
     const btn = document.getElementById('btn-load-attendees');
+    const downloadBtn = document.getElementById('btn-download-excel');
     btn.disabled = true;
     btn.innerHTML = `<div class="spinner spinner-dark"></div> Cargando...`;
     const container = document.getElementById('attendees-container');
@@ -1101,6 +1179,8 @@
       const res = await fetch(`${API_BASE}/attendance?eventId=${EVENT_ID}`);
       const data = await res.json();
       const list = Array.isArray(data) ? data : (data.data || data.attendees || data.items || []);
+      lastAttendeesList = Array.isArray(list) ? list : [];
+      downloadBtn.disabled = lastAttendeesList.length === 0;
 
       if (!Array.isArray(list) || list.length === 0) {
         container.innerHTML = `<div class="empty-state"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><p>No hay asistentes registrados aún</p></div>`;
@@ -1121,6 +1201,35 @@
 
     btn.disabled = false;
     btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Actualizar lista`;
+  }
+
+  // ── Excel export ──
+  function downloadExcel() {
+    if (!lastAttendeesList.length) {
+      showToast('Sin datos', 'Primero actualiza la lista de asistentes.', 'error');
+      return;
+    }
+
+    const rows = lastAttendeesList.map((item, i) => {
+      const p = item.registration?.participant ?? {};
+      return {
+        '#': i + 1,
+        'Nombre completo': [p.firstName, p.lastName].filter(Boolean).join(' ') || '—',
+        'Correo': p.email || '—',
+        'Teléfono': p.phone || '—',
+        'Modalidad': MODALITY_LABELS[p.modality] ?? (p.modality || '—'),
+        'Fecha de registro': item.scannedAt ? new Date(item.scannedAt).toLocaleString('es-CO') : '—',
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{ wch: 4 }, { wch: 28 }, { wch: 28 }, { wch: 16 }, { wch: 14 }, { wch: 20 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Asistentes');
+
+    const fileName = `asistentes_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    showToast('Descarga iniciada', `Archivo ${fileName} generado.`, 'success');
   }
 
   // ── Render table with specific fields ──
